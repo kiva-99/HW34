@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'docker-builder' }
+    agent { node { nodeName 'docker-builder' } }
 
     environment {
         DOCKER_IMAGE = "kirilliva/hw34-flask"
@@ -30,8 +30,9 @@ pipeline {
                     steps {
                         echo "=== Запускаем юнит-тесты ==="
                         sh """
-                            docker run --rm ${DOCKER_IMAGE}:${DOCKER_TAG} \
-                            python -m pytest app/test_app.py -v
+                            docker run --rm \
+                                ${DOCKER_IMAGE}:${DOCKER_TAG} \
+                                python -m pytest test_app.py -v
                         """
                     }
                 }
@@ -40,18 +41,20 @@ pipeline {
                     steps {
                         echo "=== Проверяем стиль кода ==="
                         sh """
-                            docker run --rm ${DOCKER_IMAGE}:${DOCKER_TAG} \
-                            python -m flake8 app/app.py --max-line-length=88
+                            docker run --rm \
+                                ${DOCKER_IMAGE}:${DOCKER_TAG} \
+                                python -m flake8 app.py --max-line-length=88
                         """
                     }
                 }
 
                 stage('Test - pip audit') {
                     steps {
-                        echo "=== Проверяем зависимости ==="
+                        echo "=== Список зависимостей ==="
                         sh """
-                            docker run --rm ${DOCKER_IMAGE}:${DOCKER_TAG} \
-                            pip list --format=columns
+                            docker run --rm \
+                                ${DOCKER_IMAGE}:${DOCKER_TAG} \
+                                pip list --format=columns
                         """
                     }
                 }
