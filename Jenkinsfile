@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent { label 'docker-agent' }  // явно указываем docker-agent-1
 
     environment {
         DOCKER_IMAGE = "kiva99/hw34-flask"
@@ -46,12 +46,12 @@ pipeline {
                     }
                 }
 
-                stage('Test - safety check') {
+                stage('Test - pip audit') {
                     steps {
-                        echo "=== Проверяем уязвимости зависимостей ==="
+                        echo "=== Проверяем зависимости ==="
                         sh """
                             docker run --rm ${DOCKER_IMAGE}:${DOCKER_TAG} \
-                            pip list
+                            pip list --format=columns
                         """
                     }
                 }
@@ -93,13 +93,13 @@ pipeline {
 
     post {
         success {
-            echo "=== ✅ Pipeline выполнен успешно! ==="
+            echo "✅ Pipeline выполнен успешно на агенте: ${env.NODE_NAME}"
         }
         failure {
-            echo "=== ❌ Pipeline завершился с ошибкой ==="
+            echo "❌ Pipeline завершился с ошибкой на агенте: ${env.NODE_NAME}"
         }
         always {
-            echo "=== Очистка: удаляем старые образы ==="
+            echo "=== Очистка: удаляем неиспользуемые образы ==="
             sh "docker image prune -f"
         }
     }
