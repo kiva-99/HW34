@@ -18,8 +18,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "=== Собираем Docker образ ==="
-                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-                sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
+                sh 'docker build -t $DOCKER_IMAGE:$DOCKER_TAG .'
+                sh 'docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKER_IMAGE:latest'
             }
         }
 
@@ -29,33 +29,21 @@ pipeline {
                 stage('Test - pytest') {
                     steps {
                         echo "=== Запускаем юнит-тесты ==="
-                        sh """
-                            docker run --rm \
-                                ${DOCKER_IMAGE}:${DOCKER_TAG} \
-                                python -m pytest test_app.py -v
-                        """
+                        sh 'docker run --rm $DOCKER_IMAGE:$DOCKER_TAG python -m pytest test_app.py -v'
                     }
                 }
 
                 stage('Test - flake8 lint') {
                     steps {
                         echo "=== Проверяем стиль кода ==="
-                        sh """
-                            docker run --rm \
-                                ${DOCKER_IMAGE}:${DOCKER_TAG} \
-                                python -m flake8 app.py --max-line-length=88
-                        """
+                        sh 'docker run --rm $DOCKER_IMAGE:$DOCKER_TAG python -m flake8 app.py --max-line-length=88'
                     }
                 }
 
                 stage('Test - pip audit') {
                     steps {
                         echo "=== Список зависимостей ==="
-                        sh """
-                            docker run --rm \
-                                ${DOCKER_IMAGE}:${DOCKER_TAG} \
-                                pip list --format=columns
-                        """
+                        sh 'docker run --rm $DOCKER_IMAGE:$DOCKER_TAG pip list --format=columns'
                     }
                 }
 
@@ -70,9 +58,10 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
-                    sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
-                    sh "docker push ${DOCKER_IMAGE}:latest"
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh 'docker push $DOCKER_IMAGE:$DOCKER_TAG'
+                    sh 'docker push $DOCKER_IMAGE:latest'
+                    sh 'docker logout'
                 }
             }
         }
@@ -80,14 +69,14 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "=== Запускаем контейнер ==="
-                sh "docker stop hw34-app || true"
-                sh "docker rm hw34-app || true"
-                sh """
+                sh 'docker stop hw34-app || true'
+                sh 'docker rm hw34-app || true'
+                sh '''
                     docker run -d \
                         --name hw34-app \
                         -p 5000:5000 \
-                        ${DOCKER_IMAGE}:${DOCKER_TAG}
-                """
+                        $DOCKER_IMAGE:$DOCKER_TAG
+                '''
                 echo "=== Приложение доступно на http://localhost:5000 ==="
             }
         }
@@ -103,7 +92,7 @@ pipeline {
         }
         always {
             echo "=== Очистка: удаляем неиспользуемые образы ==="
-            sh "docker image prune -f"
+            sh 'docker image prune -f'
         }
     }
 }
