@@ -2,7 +2,7 @@ pipeline {
     agent { label 'docker-agent' }  // явно указываем docker-agent-1
 
     environment {
-        DOCKER_IMAGE = "kiva99/hw34-flask"
+        DOCKER_IMAGE = "kirilliva/hw34-flask"
         DOCKER_TAG   = "build-${BUILD_NUMBER}"
     }
 
