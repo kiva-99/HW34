@@ -107,18 +107,3 @@ pipeline {
         }
     }
 }
-```
-
----
-
-## 📚 Что исправили и почему:
-```
-БЫЛО (неправильно):          СТАЛО (правильно):
-pytest app/test_app.py  →    pytest test_app.py
-flake8 app/app.py       →    flake8 app.py
-
-Почему?
-Dockerfile: COPY app/ .
-            └── копирует СОДЕРЖИМОЕ папки app/ в /app
-                то есть app.py оказывается в /app/app.py НЕТ
-                а просто в /app/app.py ДА — без подпапки!
