@@ -1,5 +1,5 @@
 pipeline {
-    agent { node { nodeName 'docker-builder' } }
+    agent { label 'docker-builder' }
 
     environment {
         DOCKER_IMAGE = "kirilliva/hw34-flask"
