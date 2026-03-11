@@ -2,9 +2,9 @@ pipeline {
     agent { label 'docker-builder' }
 
     environment {
-        DOCKER_IMAGE  = "kirilliva/hw34-flask"
-        DOCKER_TAG    = "build-${BUILD_NUMBER}"
-        DEPLOY_REPO   = "https://github.com/kiva-99/HW34-deploy.git"
+        DOCKER_IMAGE = "kirilliva/hw34-flask"
+        DOCKER_TAG   = "build-${BUILD_NUMBER}"
+        DEPLOY_REPO  = "https://github.com/kiva-99/HW34-deploy.git"
     }
 
     stages {
@@ -69,37 +69,24 @@ pipeline {
 
         stage('Update Deploy Config (GitOps)') {
             steps {
-                echo "=== GitOps: обновляем конфиг деплоя в Git ==="
+                echo "=== GitOps: обновляем конфиг деплоя ==="
                 sh """
-                    # Клонируем репозиторий конфигурации
                     rm -rf hw34-deploy-repo
                     git clone ${DEPLOY_REPO} hw34-deploy-repo
                     cd hw34-deploy-repo
 
-                    # Обновляем версию образа в конфиге
                     sed -i 's|tag:.*|tag: ${DOCKER_TAG}|' deploy-config.yml
                     sed -i 's|build_number:.*|build_number: "${BUILD_NUMBER}"|' deploy-config.yml
                     sed -i 's|timestamp:.*|timestamp: "'\$(date -u +%Y-%m-%dT%H:%M:%SZ)'"|' deploy-config.yml
                     sed -i 's|updated_by:.*|updated_by: jenkins|' deploy-config.yml
 
-                    # Пушим изменения обратно в Git
                     git config user.email "jenkins@hw34.local"
                     git config user.name "Jenkins CI"
                     git add deploy-config.yml
                     git diff --staged --quiet || git commit -m "deploy: update image to ${DOCKER_TAG} [build ${BUILD_NUMBER}]"
                     git push ${DEPLOY_REPO} main
                 """
-                echo "=== ✅ Deploy config обновлён в ${DEPLOY_REPO} ==="
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                echo "=== Запускаем контейнер ==="
-                sh 'docker stop hw34-app || true'
-                sh 'docker rm hw34-app || true'
-                sh 'docker run -d --name hw34-app -p 5000:5000 $DOCKER_IMAGE:$DOCKER_TAG'
-                echo "=== Приложение доступно на http://localhost:5000 ==="
+                echo "=== ✅ Deploy config обновлён ==="
             }
         }
 
@@ -113,7 +100,6 @@ pipeline {
             echo "❌ Pipeline завершился с ошибкой на агенте: ${env.NODE_NAME}"
         }
         always {
-            echo "=== Очистка ==="
             sh 'docker image prune -f'
             sh 'rm -rf hw34-deploy-repo'
         }
