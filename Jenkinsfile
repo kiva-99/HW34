@@ -1,6 +1,10 @@
 pipeline {
     agent { label 'docker-builder' }
 
+    triggers {
+        pollSCM('H/2 * * * *')
+    }
+
     environment {
         DOCKER_IMAGE = "kirilliva/hw34-flask"
         DOCKER_TAG   = "build-${BUILD_NUMBER}"
