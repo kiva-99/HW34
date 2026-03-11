@@ -68,27 +68,33 @@ pipeline {
         }
 
         stage('Update Deploy Config (GitOps)') {
-            steps {
-                echo "=== GitOps: обновляем конфиг деплоя ==="
-                sh """
-                    rm -rf hw34-deploy-repo
-                    git clone ${DEPLOY_REPO} hw34-deploy-repo
-                    cd hw34-deploy-repo
+    steps {
+        echo "=== GitOps: обновляем конфиг деплоя ==="
+        withCredentials([usernamePassword(
+            credentialsId: 'github-credentials',
+            usernameVariable: 'GIT_USER',
+            passwordVariable: 'GIT_PASS'
+        )]) {
+            sh """
+                rm -rf hw34-deploy-repo
+                git clone https://github.com/kiva-99/HW34-deploy.git hw34-deploy-repo
+                cd hw34-deploy-repo
 
-                    sed -i 's|tag:.*|tag: ${DOCKER_TAG}|' deploy-config.yml
-                    sed -i 's|build_number:.*|build_number: "${BUILD_NUMBER}"|' deploy-config.yml
-                    sed -i 's|timestamp:.*|timestamp: "'\$(date -u +%Y-%m-%dT%H:%M:%SZ)'"|' deploy-config.yml
-                    sed -i 's|updated_by:.*|updated_by: jenkins|' deploy-config.yml
+                sed -i 's|tag:.*|tag: ${DOCKER_TAG}|' deploy-config.yml
+                sed -i 's|build_number:.*|build_number: "${BUILD_NUMBER}"|' deploy-config.yml
+                sed -i 's|timestamp:.*|timestamp: "'\$(date -u +%Y-%m-%dT%H:%M:%SZ)'"|' deploy-config.yml
+                sed -i 's|updated_by:.*|updated_by: jenkins|' deploy-config.yml
 
-                    git config user.email "jenkins@hw34.local"
-                    git config user.name "Jenkins CI"
-                    git add deploy-config.yml
-                    git diff --staged --quiet || git commit -m "deploy: update image to ${DOCKER_TAG} [build ${BUILD_NUMBER}]"
-                    git push ${DEPLOY_REPO} main
-                """
-                echo "=== ✅ Deploy config обновлён ==="
-            }
+                git config user.email "jenkins@hw34.local"
+                git config user.name "Jenkins CI"
+                git add deploy-config.yml
+                git diff --staged --quiet || git commit -m "deploy: update image to ${DOCKER_TAG} [build ${BUILD_NUMBER}]"
+                git push https://\$GIT_USER:\$GIT_PASS@github.com/kiva-99/HW34-deploy.git main
+            """
         }
+        echo "=== ✅ Deploy config обновлён ==="
+    }
+}
 
     }
 
